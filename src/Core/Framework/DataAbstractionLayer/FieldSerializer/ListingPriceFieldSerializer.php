@@ -2,6 +2,8 @@
 
 namespace Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer;
 
+use Money\Currency;
+use Money\Money;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Field;
 use Shopware\Core\Framework\DataAbstractionLayer\Pricing\ListingPrice;
@@ -28,8 +30,10 @@ class ListingPriceFieldSerializer extends AbstractFieldSerializer
     {
         parent::__construct($validator, $definitionRegistry);
 
+        $zero = new Money(0, new Currency('EUR'));
+
         $this->listPrice = new ListingPrice();
-        $this->price = new Price('', 0, 0, false);
+        $this->price = new Price('', $zero, $zero, false);
     }
 
     public function encode(
@@ -86,8 +90,8 @@ class ListingPriceFieldSerializer extends AbstractFieldSerializer
 
     private function normalizePrices(array $price): array
     {
-        $price['net'] = (float) $price['net'];
-        $price['gross'] = (float) $price['gross'];
+        $price['net'] = new Money($price['net']['amount'], new Currency($price['net']['currency']));
+        $price['gross'] = new Money($price['gross']['amount'], new Currency($price['gross']['currency']));
 
         return $price;
     }

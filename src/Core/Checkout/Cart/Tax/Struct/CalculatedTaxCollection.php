@@ -2,6 +2,8 @@
 
 namespace Shopware\Core\Checkout\Cart\Tax\Struct;
 
+use Money\Currency;
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Price\PriceRoundingInterface;
 use Shopware\Core\Framework\Struct\Collection;
 
@@ -53,15 +55,15 @@ class CalculatedTaxCollection extends Collection
     /**
      * Returns the total calculated tax for this item
      */
-    public function getAmount(): float
+    public function getAmount(): Money
     {
-        $amounts = $this->map(
-            function (CalculatedTax $calculatedTax) {
-                return $calculatedTax->getTax();
-            }
-        );
+        $sum = new Money(0, new Currency('EUR'));
 
-        return array_sum($amounts);
+        foreach ($this->getIterator() as $tax) {
+            $sum->add($tax->getTax());
+        }
+
+        return $sum;
     }
 
     public function merge(self $taxCollection): self

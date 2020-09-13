@@ -17,9 +17,7 @@ class TaxCalculatorTest extends TestCase
      */
     public function testCalculateGrossPriceOfNetPrice(float $expected, PriceRoundingInterface $rounding, int $precision, TaxRule $taxRule, float $net): void
     {
-        $calculator = new TaxCalculator(
-            new TaxRuleCalculator()
-        );
+        $calculator = new TaxCalculator();
 
         $rules = new TaxRuleCollection([$taxRule]);
 

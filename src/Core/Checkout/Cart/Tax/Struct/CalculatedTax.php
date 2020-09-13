@@ -2,12 +2,13 @@
 
 namespace Shopware\Core\Checkout\Cart\Tax\Struct;
 
+use Money\Money;
 use Shopware\Core\Framework\Struct\Struct;
 
 class CalculatedTax extends Struct
 {
     /**
-     * @var float
+     * @var Money
      */
     protected $tax = 0;
 
@@ -17,23 +18,23 @@ class CalculatedTax extends Struct
     protected $taxRate;
 
     /**
-     * @var float
+     * @var Money
      */
     protected $price = 0;
 
-    public function __construct(float $tax, float $taxRate, float $price)
+    public function __construct(Money $tax, float $taxRate, Money $price)
     {
         $this->tax = $tax;
         $this->taxRate = $taxRate;
         $this->price = $price;
     }
 
-    public function getTax(): float
+    public function getTax(): Money
     {
         return $this->tax;
     }
 
-    public function setTax(float $tax): void
+    public function setTax(Money $tax): void
     {
         $this->tax = $tax;
     }
@@ -43,18 +44,18 @@ class CalculatedTax extends Struct
         return $this->taxRate;
     }
 
-    public function getPrice(): float
+    public function getPrice(): Money
     {
         return $this->price;
     }
 
     public function increment(self $calculatedTax): void
     {
-        $this->tax += $calculatedTax->getTax();
-        $this->price += $calculatedTax->getPrice();
+        $this->tax->add($calculatedTax->getTax());
+        $this->price->add($calculatedTax->getPrice());
     }
 
-    public function setPrice(float $price): void
+    public function setPrice(Money $price): void
     {
         $this->price = $price;
     }

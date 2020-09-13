@@ -2,10 +2,13 @@
 
 namespace Shopware\Core\Content\Product\SalesChannel\Price;
 
+use Money\Currency;
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\PriceDefinitionCollection;
 use Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopware\Core\Checkout\Cart\Price\Struct\ReferencePriceDefinition;
+use Shopware\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryDefinition;
 use Shopware\Core\Content\Product\Aggregate\ProductPrice\ProductPriceCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductPrice\ProductPriceEntity;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -86,13 +89,7 @@ class ProductPriceDefinitionBuilder implements ProductPriceDefinitionBuilderInte
             if ($listingPrice) {
                 // indexed listing prices are indexed for each currency
                 $from = $this->getPriceForTaxState($listingPrice->getFrom(), $context);
-
                 $to = $this->getPriceForTaxState($listingPrice->getTo(), $context);
-
-                if ($listingPrice->getCurrencyId() !== $context->getContext()->getCurrencyId()) {
-                    $from *= $context->getContext()->getCurrencyFactor();
-                    $to *= $context->getContext()->getCurrencyFactor();
-                }
 
                 return [
                     'from' => new QuantityPriceDefinition($from, $taxRules, $currencyPrecision, 1, true, $this->buildReferencePriceDefinition($product)),
@@ -202,26 +199,30 @@ class ProductPriceDefinitionBuilder implements ProductPriceDefinitionBuilderInte
         return $filtered;
     }
 
-    private function getCurrencyPrice(PriceRuleEntity $rule, SalesChannelContext $context): float
+    private function getCurrencyPrice(PriceRuleEntity $rule, SalesChannelContext $context): Money
     {
         $price = $rule->getPrice()->getCurrencyPrice($context->getCurrency()->getId());
 
-        $value = $this->getPriceForTaxState($price, $context);
-
-        if ($price->getCurrencyId() === Defaults::CURRENCY) {
-            $value *= $context->getContext()->getCurrencyFactor();
+        if (null === $price) {
+            return new Money(0, new Currency('EUR'));
         }
 
-        return $value;
+        return $this->getPriceForTaxState($price, $context);
     }
 
-    private function getPriceForTaxState(Price $price, SalesChannelContext $context): float
+    private function getPriceForTaxState(Price $price, SalesChannelContext $context): Money
     {
         if ($context->getTaxState() === CartPrice::TAX_STATE_GROSS) {
-            return $price->getGross();
+            $amount = $price->getGross();
+        } else {
+            $amount = $price->getNet();
         }
 
-        return $price->getNet();
+        if ($price->getCurrencyId() !== $context->getCurrency()->getId()) {
+            $amount->multiply($context->getContext()->getCurrencyFactor());
+        }
+
+        return $amount;
     }
 
     private function sortByQuantity(array $prices): array
@@ -252,12 +253,12 @@ class ProductPriceDefinitionBuilder implements ProductPriceDefinitionBuilderInte
         return $referencePrice;
     }
 
-    private function getListPrice(ProductEntity $product, SalesChannelContext $context): float
+    private function getListPrice(ProductEntity $product, SalesChannelContext $context): Money
     {
         $price = $product->getPrice()->getCurrencyPrice($context->getCurrency()->getId());
 
         if (!$price || !$price->getListPrice()) {
-            return 0.0;
+            return new Money(0, new Currency('EUR'));
         }
 
         if ($context->getTaxState() === CartPrice::TAX_STATE_GROSS) {
@@ -266,27 +267,24 @@ class ProductPriceDefinitionBuilder implements ProductPriceDefinitionBuilderInte
             $value = $price->getListPrice()->getNet();
         }
 
+        $precision = $context->getCurrency()->getDecimalPrecision();
+        $amount = $value * (10 ** $precision);
+
         if ($price->getCurrencyId() !== $context->getCurrency()->getId()) {
-            $value *= $context->getContext()->getCurrencyFactor();
+            $amount *= $context->getContext()->getCurrencyFactor();
         }
 
-        return $value;
+        return new Money($amount, new Currency('EUR'));
     }
 
-    private function getProductCurrencyPrice(ProductEntity $product, SalesChannelContext $context): float
+    private function getProductCurrencyPrice(ProductEntity $product, SalesChannelContext $context): Money
     {
         $price = $product->getPrice()->getCurrencyPrice($context->getCurrency()->getId());
 
         if (!$price) {
-            return 0.0;
+            return new Money(0, new Currency('EUR'));
         }
 
-        $value = $this->getPriceForTaxState($price, $context);
-
-        if ($price->getCurrencyId() !== $context->getCurrency()->getId()) {
-            $value *= $context->getContext()->getCurrencyFactor();
-        }
-
-        return $value;
+        return $this->getPriceForTaxState($price, $context);
     }
 }

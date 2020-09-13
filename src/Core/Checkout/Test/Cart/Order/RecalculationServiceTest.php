@@ -3,6 +3,8 @@
 namespace Shopware\Core\Checkout\Test\Cart\Order;
 
 use Doctrine\DBAL\Connection;
+use Money\Currency;
+use Money\Money;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\CartBehavior;
@@ -919,11 +921,14 @@ class RecalculationServiceTest extends TestCase
 
     private function addProduct(Cart $cart, string $id, array $options = [])
     {
+        $gross = new Money(11999, new Currency('EUR'));
+        $net = new Money(9999, new Currency('EUR'));
+
         $default = [
             'id' => $id,
             'productNumber' => Uuid::randomHex(),
             'price' => [
-                ['currencyId' => Defaults::CURRENCY, 'gross' => 119.99, 'net' => 99.99, 'linked' => false],
+                ['currencyId' => Defaults::CURRENCY, 'gross' => $gross, 'net' => $net, 'linked' => false],
             ],
             'name' => 'test',
             'manufacturer' => ['name' => 'test'],
@@ -1218,6 +1223,8 @@ class RecalculationServiceTest extends TestCase
         $prop = ReflectionHelper::getProperty(RuleConditionRegistry::class, 'rules');
         $prop->setValue($ruleRegistry, array_merge($prop->getValue($ruleRegistry), ['true' => new TrueRule()]));
 
+        $price = new Money(1000, new Currency('EUR'));
+
         $data = [
             'id' => $shippingMethodId,
             'type' => 0,
@@ -1231,33 +1238,13 @@ class RecalculationServiceTest extends TestCase
                     'currencyPrice' => [
                         [
                             'currencyId' => Defaults::CURRENCY,
-                            'net' => 10.00,
-                            'gross' => 10.00,
+                            'net' => $price,
+                            'gross' => $price,
                             'linked' => false,
                         ],
                     ],
                     'calculation' => 1,
                     'quantityStart' => 1,
-                ],
-                [
-                    'id' => Uuid::randomHex(),
-                    'currencyPrice' => [
-                        [
-                            'currencyId' => Defaults::CURRENCY,
-                            'net' => 8.00,
-                            'gross' => 8.00,
-                            'linked' => false,
-                        ],
-                    ],
-                    'calculationRule' => [
-                        'name' => 'check',
-                        'priority' => 10,
-                        'conditions' => [
-                            [
-                                'type' => 'true',
-                            ],
-                        ],
-                    ],
                 ],
             ],
             'availabilityRule' => [

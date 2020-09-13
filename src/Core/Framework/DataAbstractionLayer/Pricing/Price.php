@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Framework\DataAbstractionLayer\Pricing;
 
+use Money\Money;
 use Shopware\Core\Framework\Struct\Struct;
 
 class Price extends Struct
@@ -12,12 +13,12 @@ class Price extends Struct
     protected $currencyId;
 
     /**
-     * @var float
+     * @var Money
      */
     protected $net;
 
     /**
-     * @var float
+     * @var Money
      */
     protected $gross;
 
@@ -31,7 +32,7 @@ class Price extends Struct
      */
     protected $listPrice;
 
-    public function __construct(string $currencyId, float $net, float $gross, bool $linked, ?Price $listPrice = null)
+    public function __construct(string $currencyId, Money $net, Money $gross, bool $linked, ?Price $listPrice = null)
     {
         $this->net = $net;
         $this->gross = $gross;
@@ -40,22 +41,22 @@ class Price extends Struct
         $this->listPrice = $listPrice;
     }
 
-    public function getNet(): float
+    public function getNet(): Money
     {
-        return (float) $this->net;
+        return $this->net;
     }
 
-    public function setNet(float $net): void
+    public function setNet(Money $net): void
     {
         $this->net = $net;
     }
 
-    public function getGross(): float
+    public function getGross(): Money
     {
-        return (float) $this->gross;
+        return $this->gross;
     }
 
-    public function setGross(float $gross): void
+    public function setGross(Money $gross): void
     {
         $this->gross = $gross;
     }
@@ -72,8 +73,8 @@ class Price extends Struct
 
     public function add(self $price): void
     {
-        $this->gross += $price->getGross();
-        $this->net += $price->getNet();
+        $this->gross->add($price->getGross());
+        $this->net->add($price->getNet());
     }
 
     public function getCurrencyId(): string

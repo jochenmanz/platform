@@ -2,6 +2,8 @@
 
 namespace Shopware\Core\Checkout\Cart\Delivery;
 
+use Money\Currency;
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\Delivery;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
@@ -66,7 +68,7 @@ class DeliveryCalculator
     private function calculateDelivery(CartDataCollection $data, Cart $cart, Delivery $delivery, SalesChannelContext $context): void
     {
         $costs = null;
-        if ($delivery->getShippingCosts()->getUnitPrice() > 0) {
+        if (!$delivery->getShippingCosts()->getUnitPrice()->isZero()) {
             $costs = $this->calculateShippingCosts(
                 new PriceCollection([
                     new Price(
@@ -86,8 +88,10 @@ class DeliveryCalculator
         }
 
         if ($this->hasDeliveryWithOnlyShippingFreeItems($delivery)) {
+            $zero = new Money(0, new Currency('EUR'));
+
             $costs = $this->calculateShippingCosts(
-                new PriceCollection([new Price(Defaults::CURRENCY, 0, 0, false)]),
+                new PriceCollection([new Price(Defaults::CURRENCY, $zero, $zero, false)]),
                 $delivery->getPositions()->getLineItems(),
                 $context
             );
@@ -185,25 +189,35 @@ class DeliveryCalculator
 
         $price = $this->getCurrencyPrice($priceCollection, $context);
 
-        $definition = new QuantityPriceDefinition($price, $rules, $context->getContext()->getCurrencyPrecision(), 1, true);
+        $definition = new QuantityPriceDefinition(
+            $price,
+            $rules,
+            $context->getContext()->getCurrencyPrecision(),
+            1,
+            true
+        );
 
         return $this->priceCalculator->calculate($definition, $context);
     }
 
-    private function getCurrencyPrice(PriceCollection $priceCollection, SalesChannelContext $context): float
+    private function getCurrencyPrice(PriceCollection $priceCollection, SalesChannelContext $context): Money
     {
         $price = $priceCollection->getCurrencyPrice($context->getCurrency()->getId());
+
+        if (null === $price) {
+            return new Money(0, new Currency('EUR'));
+        }
 
         $value = $this->getPriceForTaxState($price, $context);
 
         if ($price->getCurrencyId() === Defaults::CURRENCY) {
-            $value *= $context->getContext()->getCurrencyFactor();
+            $value->multiply($context->getContext()->getCurrencyFactor());
         }
 
         return $value;
     }
 
-    private function getPriceForTaxState(Price $price, SalesChannelContext $context): float
+    private function getPriceForTaxState(Price $price, SalesChannelContext $context): Money
     {
         $taxState = $this->taxDetector->getTaxState($context);
 
@@ -219,10 +233,9 @@ class DeliveryCalculator
         $shippingPrices->sort(
             function (ShippingMethodPriceEntity $priceEntityA, ShippingMethodPriceEntity $priceEntityB) use ($context) {
                 $priceA = $this->getCurrencyPrice($priceEntityA->getCurrencyPrice(), $context);
-
                 $priceB = $this->getCurrencyPrice($priceEntityB->getCurrencyPrice(), $context);
 
-                return $priceA <=> $priceB;
+                return $priceA->compare($priceB);
             }
         );
 

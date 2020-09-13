@@ -2,17 +2,18 @@
 
 namespace Shopware\Core\Checkout\Cart\Price\Struct;
 
+use Money\Money;
 use Shopware\Core\Framework\Struct\Struct;
 
 class ListPrice extends Struct
 {
     /**
-     * @var float
+     * @var Money
      */
     protected $price;
 
     /**
-     * @var float
+     * @var Money
      */
     protected $discount;
 
@@ -21,28 +22,36 @@ class ListPrice extends Struct
      */
     protected $percentage;
 
-    private function __construct(float $price, float $discount, float $percentage)
+    private function __construct(Money $price, Money $discount, float $percentage)
     {
         $this->price = $price;
         $this->discount = $discount;
         $this->percentage = $percentage;
     }
 
-    public static function createFromUnitPrice(float $unitPrice, float $listPrice): ListPrice
+    public static function createFromUnitPrice(Money $unitPrice, Money $listPrice): ListPrice
     {
+        $discount = $unitPrice->subtract($listPrice)->multiply(-1);
+
+        if (!$listPrice->isZero()) {
+            $percentage = $unitPrice->ratioOf($listPrice);
+        } else {
+            $percentage = 0;
+        }
+
         return new self(
             $listPrice,
-            ($listPrice - $unitPrice) * -1,
-            round(100 - $unitPrice / $listPrice * 100, 2)
+            $discount,
+            (float) $percentage
         );
     }
 
-    public function getPrice(): float
+    public function getPrice(): Money
     {
         return $this->price;
     }
 
-    public function getDiscount(): float
+    public function getDiscount(): Money
     {
         return $this->discount;
     }

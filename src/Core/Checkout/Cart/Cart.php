@@ -2,6 +2,8 @@
 
 namespace Shopware\Core\Checkout\Cart;
 
+use Money\Currency;
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
 use Shopware\Core\Checkout\Cart\Error\Error;
 use Shopware\Core\Checkout\Cart\Error\ErrorCollection;
@@ -90,7 +92,7 @@ class Cart extends Struct
         $this->transactions = new TransactionCollection();
         $this->errors = new ErrorCollection();
         $this->deliveries = new DeliveryCollection();
-        $this->price = new CartPrice(0, 0, 0, new CalculatedTaxCollection(), new TaxRuleCollection(), CartPrice::TAX_STATE_GROSS);
+        $this->price = CartPrice::createEmpty();
     }
 
     public function getName(): string

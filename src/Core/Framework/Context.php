@@ -230,7 +230,7 @@ class Context extends Struct
 
     public function getUseCache(): bool
     {
-        return $this->useCache;
+        return false;
     }
 
     /**

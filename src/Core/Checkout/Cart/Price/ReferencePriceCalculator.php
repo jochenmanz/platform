@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Checkout\Cart\Price;
 
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopware\Core\Checkout\Cart\Price\Struct\ReferencePrice;
 
@@ -17,7 +18,7 @@ class ReferencePriceCalculator
         $this->priceRounding = $priceRounding;
     }
 
-    public function calculate(float $price, QuantityPriceDefinition $quantityPriceDefinition): ?ReferencePrice
+    public function calculate(Money $price, QuantityPriceDefinition $quantityPriceDefinition): ?ReferencePrice
     {
         if (!$quantityPriceDefinition->getReferencePriceDefinition()) {
             return null;

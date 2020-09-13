@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Checkout\Cart\Tax;
 
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTax;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRule;
@@ -9,16 +10,17 @@ use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 
 class TaxCalculator
 {
-    public function calculateGross(float $netPrice, TaxRuleCollection $rules): float
+    public function calculateGross(Money $netPrice, TaxRuleCollection $rules): Money
     {
         $taxes = $this->calculateNetTaxes($netPrice, $rules);
 
         return $netPrice + $taxes->getAmount();
     }
 
-    public function calculateGrossTaxes(float $price, TaxRuleCollection $rules): CalculatedTaxCollection
+    public function calculateGrossTaxes(Money $price, TaxRuleCollection $rules): CalculatedTaxCollection
     {
         $taxes = [];
+
         foreach ($rules as $rule) {
             $taxes[] = $this->calculateTaxFromGrossPrice($price, $rule);
         }
@@ -26,9 +28,10 @@ class TaxCalculator
         return new CalculatedTaxCollection($taxes);
     }
 
-    public function calculateNetTaxes(float $price, TaxRuleCollection $rules): CalculatedTaxCollection
+    public function calculateNetTaxes(Money $price, TaxRuleCollection $rules): CalculatedTaxCollection
     {
         $taxes = [];
+
         foreach ($rules as $rule) {
             $taxes[] = $this->calculateTaxFromNetPrice($price, $rule);
         }
@@ -36,22 +39,32 @@ class TaxCalculator
         return new CalculatedTaxCollection($taxes);
     }
 
-    public function calculateTaxFromNetPrice(float $net, TaxRule $rule): CalculatedTax
+    public function calculateTaxFromNetPrice(Money $price, TaxRule $rule): CalculatedTax
     {
-        //calculate percentage value of net price
-        $net = $net / 100 * $rule->getPercentage();
+        $net = $price->divide(100 * $rule->getPercentage());
 
-        $calculatedTax = $net * ($rule->getTaxRate() / 100);
+        $calculatedTax = $net->multiply($rule->getTaxRate() / 100);
 
         return new CalculatedTax($calculatedTax, $rule->getTaxRate(), $net);
     }
 
-    private function calculateTaxFromGrossPrice(float $gross, TaxRule $rule): CalculatedTax
+    private function calculateTaxFromGrossPrice(Money $price, TaxRule $rule): CalculatedTax
     {
-        //calculate percentage value of gross price
-        $gross = $gross / 100 * $rule->getPercentage();
+        $gross = $price;
 
-        $calculatedTax = $gross / ((100 + $rule->getTaxRate()) / 100) * ($rule->getTaxRate() / 100);
+        if (!empty($rule->getPercentage())) {
+            $gross = $price->divide(100 * $rule->getPercentage());
+        }
+
+
+        $divisor = ((100 + $rule->getTaxRate()) / 100) * ($rule->getTaxRate() / 100);
+
+        if (empty($divisor)) {
+            $calculatedTax = $gross->divide($divisor);
+        } else {
+            $calculatedTax = $gross->divide($divisor);
+        }
+
 
         return new CalculatedTax($calculatedTax, $rule->getTaxRate(), $gross);
     }

@@ -89,11 +89,14 @@ class ElasticsearchEntityAggregator implements EntityAggregatorInterface
     private function createSearch(EntityDefinition $definition, Criteria $criteria, Context $context): Search
     {
         $search = new Search();
-        $this->helper->addFilters($definition, $criteria, $search, $context);
-        $this->helper->addQueries($definition, $criteria, $search, $context);
-        $this->helper->addAggregations($definition, $criteria, $search, $context);
-        $this->helper->addTerm($criteria, $search, $context, $definition);
+
         $this->helper->handleIds($definition, $criteria, $search, $context);
+        $this->helper->addFilters($definition, $criteria, $search, $context);
+        $this->helper->addPostFilters($definition, $criteria, $search, $context);
+        $this->helper->addQueries($definition, $criteria, $search, $context);
+        $this->helper->addSortings($definition, $criteria, $search, $context);
+        $this->helper->addTerm($criteria, $search, $context, $definition);
+
         $search->setSize(0);
 
         return $search;

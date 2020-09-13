@@ -3,6 +3,8 @@
 namespace Shopware\Core\Content\Product\DataAbstractionLayer\Indexing;
 
 use Doctrine\DBAL\Connection;
+use Money\Currency;
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Price\PriceRounding;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -199,10 +201,14 @@ class ListingPriceUpdater
 
             $currencyPrice = $price['price'][$key];
 
-            if (!$highest || $currencyPrice['gross'] > $highest['gross']) {
+            /** @var Money $gross */
+            $gross = $currencyPrice['gross'];
+
+            if (!$highest || $gross->greaterThan($highest['gross'])) {
                 $highest = $currencyPrice;
             }
-            if (!$cheapest || $currencyPrice['gross'] < $cheapest['gross']) {
+
+            if (!$cheapest || $gross->lessThan($highest['gross'])) {
                 $cheapest = $currencyPrice;
             }
         }
@@ -321,8 +327,8 @@ class ListingPriceUpdater
     private function normalizePrices(array $prices): array
     {
         foreach ($prices as &$price) {
-            $price['net'] = (float) $price['net'];
-            $price['gross'] = (float) $price['gross'];
+            $price['net'] = new Money($price['net']['amount'], new Currency($price['net']['currency']));
+            $price['gross'] = new Money($price['gross']['amount'], new Currency($price['gross']['currency']));
         }
 
         return $prices;

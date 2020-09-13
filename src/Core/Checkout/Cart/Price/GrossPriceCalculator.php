@@ -2,9 +2,12 @@
 
 namespace Shopware\Core\Checkout\Cart\Price;
 
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\ListPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
+use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTax;
+use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopware\Core\Checkout\Cart\Tax\TaxCalculator;
 
 class GrossPriceCalculator
@@ -38,23 +41,18 @@ class GrossPriceCalculator
     {
         $unitPrice = $this->getUnitPrice($definition);
 
+        /** @var CalculatedTax[]|CalculatedTaxCollection $unitTaxes */
         $unitTaxes = $this->taxCalculator->calculateGrossTaxes($unitPrice, $definition->getTaxRules());
 
         foreach ($unitTaxes as $tax) {
-            $total = $this->priceRounding->round(
-                $tax->getTax() * $definition->getQuantity(),
-                $definition->getPrecision()
-            );
+            $totalTax = $tax->getTax()->multiply($definition->getQuantity());
+            $totalPrice = $tax->getPrice()->multiply($definition->getQuantity());
 
-            $tax->setTax($total);
-
-            $tax->setPrice($tax->getPrice() * $definition->getQuantity());
+            $tax->setTax($totalTax);
+            $tax->setPrice($totalPrice);
         }
 
-        $price = $this->priceRounding->round(
-            $unitPrice * $definition->getQuantity(),
-            $definition->getPrecision()
-        );
+        $price = $unitPrice->multiply($definition->getQuantity());
 
         return new CalculatedPrice(
             $unitPrice,
@@ -67,28 +65,27 @@ class GrossPriceCalculator
         );
     }
 
-    private function getUnitPrice(QuantityPriceDefinition $definition): float
+    private function getUnitPrice(QuantityPriceDefinition $definition): Money
     {
         //item price already calculated?
         if ($definition->isCalculated()) {
             return $definition->getPrice();
         }
 
-        $price = $this->taxCalculator->calculateGross(
+        return $this->taxCalculator->calculateGross(
             $definition->getPrice(),
             $definition->getTaxRules()
         );
-
-        return $this->priceRounding->round($price, $definition->getPrecision());
     }
 
-    private function calculateListPrice(float $unitPrice, QuantityPriceDefinition $definition): ?ListPrice
+    private function calculateListPrice(Money $unitPrice, QuantityPriceDefinition $definition): ?ListPrice
     {
         if (!$definition->getListPrice()) {
             return null;
         }
 
         $price = $definition->getListPrice();
+
         if (!$definition->isCalculated()) {
             $price = $this->taxCalculator->calculateGross(
                 $definition->getListPrice(),
@@ -96,8 +93,6 @@ class GrossPriceCalculator
             );
         }
 
-        $listPrice = $this->priceRounding->round($price, $definition->getPrecision());
-
-        return ListPrice::createFromUnitPrice($unitPrice, $listPrice);
+        return ListPrice::createFromUnitPrice($unitPrice, $price);
     }
 }

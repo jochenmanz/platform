@@ -2,6 +2,8 @@
 
 namespace Shopware\Core\Checkout\Cart\Delivery;
 
+use Money\Currency;
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\CartBehavior;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\Delivery;
@@ -86,12 +88,19 @@ class DeliveryBuilder
             return null;
         }
 
+        $zero = new Money(0, new Currency('EUR'));
+
         return new Delivery(
             $positions,
             $this->getDeliveryDateByPositions($positions),
             $shippingMethod,
             $context->getShippingLocation(),
-            new CalculatedPrice(0, 0, new CalculatedTaxCollection(), new TaxRuleCollection())
+            new CalculatedPrice(
+                $zero,
+                $zero,
+                new CalculatedTaxCollection(),
+                new TaxRuleCollection()
+            )
         );
     }
 

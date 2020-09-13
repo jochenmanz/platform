@@ -2,9 +2,12 @@
 
 namespace Shopware\Core\Checkout\Cart\Price\Struct;
 
+use Money\Currency;
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Framework\Struct\Struct;
+use function in_array;
 
 class CartPrice extends Struct
 {
@@ -13,14 +16,19 @@ class CartPrice extends Struct
     public const TAX_STATE_FREE = 'tax-free';
 
     /**
-     * @var float
+     * @var Money
      */
     protected $netPrice;
 
     /**
-     * @var float
+     * @var Money
      */
     protected $totalPrice;
+
+    /**
+     * @var Money
+     */
+    protected $positionPrice;
 
     /**
      * @var CalculatedTaxCollection
@@ -33,19 +41,14 @@ class CartPrice extends Struct
     protected $taxRules;
 
     /**
-     * @var float
-     */
-    protected $positionPrice;
-
-    /**
      * @var string
      */
     protected $taxStatus;
 
     public function __construct(
-        float $netPrice,
-        float $totalPrice,
-        float $positionPrice,
+        Money $netPrice,
+        Money $totalPrice,
+        Money $positionPrice,
         CalculatedTaxCollection $calculatedTaxes,
         TaxRuleCollection $taxRules,
         string $taxStatus
@@ -58,14 +61,19 @@ class CartPrice extends Struct
         $this->taxStatus = $taxStatus;
     }
 
-    public function getNetPrice(): float
+    public function getNetPrice(): Money
     {
         return $this->netPrice;
     }
 
-    public function getTotalPrice(): float
+    public function getTotalPrice(): Money
     {
         return $this->totalPrice;
+    }
+
+    public function getPositionPrice(): Money
+    {
+        return $this->positionPrice;
     }
 
     public function getCalculatedTaxes(): CalculatedTaxCollection
@@ -78,11 +86,6 @@ class CartPrice extends Struct
         return $this->taxRules;
     }
 
-    public function getPositionPrice(): float
-    {
-        return $this->positionPrice;
-    }
-
     public function getTaxStatus(): string
     {
         return $this->taxStatus;
@@ -90,7 +93,7 @@ class CartPrice extends Struct
 
     public function hasNetPrices(): bool
     {
-        return \in_array($this->taxStatus, [self::TAX_STATE_NET, self::TAX_STATE_FREE], true);
+        return in_array($this->taxStatus, [self::TAX_STATE_NET, self::TAX_STATE_FREE], true);
     }
 
     public function isTaxFree(): bool
@@ -100,7 +103,16 @@ class CartPrice extends Struct
 
     public static function createEmpty(string $taxState = self::TAX_STATE_GROSS): CartPrice
     {
-        return new self(0, 0, 0, new CalculatedTaxCollection(), new TaxRuleCollection(), $taxState);
+        $zero = new Money(0, new Currency('EUR'));
+
+        return new self(
+            $zero,
+            $zero,
+            $zero,
+            new CalculatedTaxCollection(),
+            new TaxRuleCollection(),
+            $taxState
+        );
     }
 
     public function getApiAlias(): string

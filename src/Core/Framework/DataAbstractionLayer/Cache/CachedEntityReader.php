@@ -40,6 +40,8 @@ class CachedEntityReader implements EntityReaderInterface
 
     public function read(EntityDefinition $definition, Criteria $criteria, Context $context): EntityCollection
     {
+        return $this->decorated->read($definition, $criteria, $context);
+
         if (!$context->getUseCache()) {
             return $this->decorated->read($definition, $criteria, $context);
         }

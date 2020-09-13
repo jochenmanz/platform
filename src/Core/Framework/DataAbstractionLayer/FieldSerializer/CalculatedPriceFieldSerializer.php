@@ -2,6 +2,8 @@
 
 namespace Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer;
 
+use Money\Currency;
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\ListPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\ReferencePrice;
@@ -39,10 +41,11 @@ class CalculatedPriceFieldSerializer extends JsonFieldSerializer
         if ($value === null) {
             return null;
         }
+
         $value = parent::decode($field, $value);
 
         $taxRules = array_map(
-            function (array $tax) {
+            static function (array $tax) {
                 return new TaxRule(
                     (float) $tax['taxRate'],
                     (float) $tax['percentage']
@@ -52,11 +55,11 @@ class CalculatedPriceFieldSerializer extends JsonFieldSerializer
         );
 
         $calculatedTaxes = array_map(
-            function (array $tax) {
+            static function (array $tax) {
                 return new CalculatedTax(
-                    (float) $tax['tax'],
+                    new Money($tax['tax']['amount'], new Currency($tax['tax']['currency'])),
                     (float) $tax['taxRate'],
-                    (float) $tax['price']
+                    new Money($tax['price']['amount'], new Currency($tax['price']['currency']))
                 );
             },
             $value['calculatedTaxes']
@@ -77,14 +80,14 @@ class CalculatedPriceFieldSerializer extends JsonFieldSerializer
         $listPrice = null;
         if (isset($value['listPrice'])) {
             $listPrice = ListPrice::createFromUnitPrice(
-                (float) $value['unitPrice'],
-                (float) $value['listPrice']['price']
+                new Money($value['unitPrice']['amount'], new Currency($value['unitPrice']['currency'])),
+                new Money($value['listPrice']['price']['amount'], new Currency($value['listPrice']['price']['currency']))
             );
         }
 
         return new CalculatedPrice(
-            (float) $value['unitPrice'],
-            (float) $value['totalPrice'],
+            new Money($value['unitPrice']['amount'], new Currency($value['unitPrice']['currency'])),
+            new Money($value['totalPrice']['amount'], new Currency($value['totalPrice']['currency'])),
             new CalculatedTaxCollection($calculatedTaxes),
             new TaxRuleCollection($taxRules),
             (int) $value['quantity'],

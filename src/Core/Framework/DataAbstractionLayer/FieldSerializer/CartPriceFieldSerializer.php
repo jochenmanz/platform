@@ -2,6 +2,8 @@
 
 namespace Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer;
 
+use Money\Currency;
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTax;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
@@ -38,7 +40,7 @@ class CartPriceFieldSerializer extends JsonFieldSerializer
         $value = parent::decode($field, $value);
 
         $taxRules = array_map(
-            function (array $tax) {
+            static function (array $tax) {
                 return new TaxRule(
                     (float) $tax['taxRate'],
                     (float) $tax['percentage']
@@ -48,20 +50,20 @@ class CartPriceFieldSerializer extends JsonFieldSerializer
         );
 
         $calculatedTaxes = array_map(
-            function (array $tax) {
+            static function (array $tax) {
                 return new CalculatedTax(
-                    (float) $tax['tax'],
+                    new Money($tax['tax']['amount'], new Currency($tax['tax']['currency'])),
                     (float) $tax['taxRate'],
-                    (float) $tax['price']
+                    new Money($tax['price']['amount'], new Currency($tax['price']['currency']))
                 );
             },
             $value['calculatedTaxes']
         );
 
         return new CartPrice(
-            (float) $value['netPrice'],
-            (float) $value['totalPrice'],
-            (float) $value['positionPrice'],
+            new Money($value['netPrice']['amount'], new Currency($value['netPrice']['currency'])),
+            new Money($value['totalPrice']['amount'], new Currency($value['totalPrice']['currency'])),
+            new Money($value['positionPrice']['amount'], new Currency($value['positionPrice']['currency'])),
             new CalculatedTaxCollection($calculatedTaxes),
             new TaxRuleCollection($taxRules),
             (string) $value['taxStatus']

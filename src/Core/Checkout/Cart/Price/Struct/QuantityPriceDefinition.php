@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Checkout\Cart\Price\Struct;
 
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRule;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Framework\Struct\Struct;
@@ -19,7 +20,7 @@ class QuantityPriceDefinition extends Struct implements PriceDefinitionInterface
     public const SORTING_PRIORITY = 100;
 
     /**
-     * @var float
+     * @var Money
      */
     protected $price;
 
@@ -49,18 +50,18 @@ class QuantityPriceDefinition extends Struct implements PriceDefinitionInterface
     protected $referencePriceDefinition;
 
     /**
-     * @var float|null
+     * @var Money|null
      */
     protected $listPrice;
 
     public function __construct(
-        float $price,
+        Money $price,
         TaxRuleCollection $taxRules,
         int $precision,
         int $quantity = 1,
         bool $isCalculated = false,
         ?ReferencePriceDefinition $referencePrice = null,
-        ?float $listPrice = null
+        ?Money $listPrice = null
     ) {
         $this->price = $price;
         $this->taxRules = $taxRules;
@@ -71,7 +72,7 @@ class QuantityPriceDefinition extends Struct implements PriceDefinitionInterface
         $this->listPrice = $listPrice;
     }
 
-    public function getPrice(): float
+    public function getPrice(): Money
     {
         return $this->price;
     }
@@ -109,7 +110,7 @@ class QuantityPriceDefinition extends Struct implements PriceDefinitionInterface
     public static function fromArray(array $data): self
     {
         $taxRules = array_map(
-            function (array $tax) {
+            static function (array $tax) {
                 return new TaxRule(
                     (float) $tax['taxRate'],
                     (float) $tax['percentage']
@@ -119,13 +120,13 @@ class QuantityPriceDefinition extends Struct implements PriceDefinitionInterface
         );
 
         return new self(
-            (float) $data['price'],
+            $data['price'],
             new TaxRuleCollection($taxRules),
             (int) $data['precision'],
             array_key_exists('quantity', $data) ? $data['quantity'] : 1,
             array_key_exists('isCalculated', $data) ? $data['isCalculated'] : false,
             null,
-            isset($data['listPrice']) ? (float) $data['listPrice'] : null
+            $data['listPrice'] ?? null
         );
     }
 
@@ -162,7 +163,7 @@ class QuantityPriceDefinition extends Struct implements PriceDefinitionInterface
         return $this->referencePriceDefinition;
     }
 
-    public function getListPrice(): ?float
+    public function getListPrice(): ?Money
     {
         return $this->listPrice;
     }

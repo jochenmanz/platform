@@ -2,6 +2,8 @@
 
 namespace Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer;
 
+use Money\Currency;
+use Money\Money;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InvalidSerializerFieldException;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Field;
@@ -64,11 +66,9 @@ class PriceFieldSerializer extends AbstractFieldSerializer
             $converted = [];
 
             foreach ($value as $price) {
-                $price['gross'] = (float) $price['gross'];
-                $price['net'] = (float) $price['net'];
-
                 $converted['c' . $price['currencyId']] = $price;
             }
+
             $value = $converted;
         }
 
@@ -88,7 +88,12 @@ class PriceFieldSerializer extends AbstractFieldSerializer
 
         $prices = [];
         foreach ($value as $row) {
-            $price = new Price($row['currencyId'], (float) $row['net'], (float) $row['gross'], (bool) $row['linked']);
+            $price = new Price(
+                $row['currencyId'],
+                new Money($row['net']['amount'], new Currency($row['net']['currency'])),
+                new Money($row['gross']['amount'], new Currency($row['gross']['currency'])),
+                (bool) $row['linked']
+            );
 
             if (isset($row['listPrice']) && isset($row['listPrice']['gross'])) {
                 $listPrice = $row['listPrice'];
@@ -96,8 +101,8 @@ class PriceFieldSerializer extends AbstractFieldSerializer
                 $price->setListPrice(
                     new Price(
                         $row['currencyId'],
-                        (float) $listPrice['net'],
-                        (float) $listPrice['gross'],
+                        new Money($listPrice['net']['amount'], new Currency($listPrice['net']['currency'])),
+                        new Money($listPrice['gross']['amount'], new Currency($listPrice['gross']['currency'])),
                         (bool) $listPrice['linked']
                     )
                 );
@@ -117,8 +122,8 @@ class PriceFieldSerializer extends AbstractFieldSerializer
                 'allowMissingFields' => false,
                 'fields' => [
                     'currencyId' => [new NotBlank(), new Uuid()],
-                    'gross' => [new NotBlank(), new Type(['numeric'])],
-                    'net' => [new NotBlank(), new Type(['numeric'])],
+                    'gross' => [new NotBlank(), new Type([Money::class])],
+                    'net' => [new NotBlank(), new Type([Money::class])],
                     'linked' => [new Type('boolean')],
                     'listPrice' => [new Optional(
                         new Collection([

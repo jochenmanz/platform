@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Checkout\Cart\Price\Struct;
 
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Framework\Struct\Struct;
@@ -9,7 +10,7 @@ use Shopware\Core\Framework\Struct\Struct;
 class CalculatedPrice extends Struct
 {
     /**
-     * @var float
+     * @var Money
      */
     protected $unitPrice;
 
@@ -19,7 +20,7 @@ class CalculatedPrice extends Struct
     protected $quantity;
 
     /**
-     * @var float
+     * @var Money
      */
     protected $totalPrice;
 
@@ -44,8 +45,8 @@ class CalculatedPrice extends Struct
     protected $listPrice;
 
     public function __construct(
-        float $unitPrice,
-        float $totalPrice,
+        Money $unitPrice,
+        Money $totalPrice,
         CalculatedTaxCollection $calculatedTaxes,
         TaxRuleCollection $taxRules,
         int $quantity = 1,
@@ -61,7 +62,7 @@ class CalculatedPrice extends Struct
         $this->listPrice = $listPrice;
     }
 
-    public function getTotalPrice(): float
+    public function getTotalPrice(): Money
     {
         return $this->totalPrice;
     }
@@ -76,7 +77,7 @@ class CalculatedPrice extends Struct
         return $this->taxRules;
     }
 
-    public function getUnitPrice(): float
+    public function getUnitPrice(): Money
     {
         return $this->unitPrice;
     }

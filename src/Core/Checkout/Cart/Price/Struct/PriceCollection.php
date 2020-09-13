@@ -2,6 +2,8 @@
 
 namespace Shopware\Core\Checkout\Cart\Price\Struct;
 
+use Money\Currency;
+use Money\Money;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Framework\Struct\Collection;
@@ -74,21 +76,25 @@ class PriceCollection extends Collection
         return CalculatedPrice::class;
     }
 
-    private function getUnitPriceAmount(): float
+    private function getUnitPriceAmount(): Money
     {
-        $prices = $this->map(function (CalculatedPrice $price) {
-            return $price->getUnitPrice();
-        });
+        $sum = new Money(0, new Currency('EUR'));
 
-        return array_sum($prices);
+        foreach ($this->getIterator() as $price) {
+            $sum->add($price->getUnitPrice());
+        }
+
+        return $sum;
     }
 
-    private function getAmount(): float
+    private function getAmount(): Money
     {
-        $prices = $this->map(function (CalculatedPrice $price) {
-            return $price->getTotalPrice();
-        });
+        $sum = new Money(0, new Currency('EUR'));
 
-        return array_sum($prices);
+        foreach ($this->getIterator() as $price) {
+            $sum->add($price->getTotalPrice());
+        }
+
+        return $sum;
     }
 }
