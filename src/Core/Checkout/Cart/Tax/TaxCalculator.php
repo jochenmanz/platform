@@ -56,7 +56,6 @@ class TaxCalculator
             $gross = $price->divide(100 * $rule->getPercentage());
         }
 
-
         $divisor = ((100 + $rule->getTaxRate()) / 100) * ($rule->getTaxRate() / 100);
 
         if (empty($divisor)) {
@@ -64,7 +63,6 @@ class TaxCalculator
         } else {
             $calculatedTax = $gross->divide($divisor);
         }
-
 
         return new CalculatedTax($calculatedTax, $rule->getTaxRate(), $gross);
     }

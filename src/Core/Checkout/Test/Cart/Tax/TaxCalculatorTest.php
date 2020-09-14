@@ -8,7 +8,6 @@ use Shopware\Core\Checkout\Cart\Price\PriceRoundingInterface;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRule;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Checkout\Cart\Tax\TaxCalculator;
-use Shopware\Core\Checkout\Cart\Tax\TaxRuleCalculator;
 
 class TaxCalculatorTest extends TestCase
 {

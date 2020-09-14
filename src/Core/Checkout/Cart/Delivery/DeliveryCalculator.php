@@ -204,7 +204,7 @@ class DeliveryCalculator
     {
         $price = $priceCollection->getCurrencyPrice($context->getCurrency()->getId());
 
-        if (null === $price) {
+        if ($price === null) {
             return new Money(0, new Currency('EUR'));
         }
 
